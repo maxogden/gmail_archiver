@@ -1,10 +1,11 @@
 # encoding: UTF-8
 require 'timeout'
-require 'yaml'
+require 'time'
 require 'mail'
+require 'json'
 require 'net/imap'
 require 'time'
-require 'gmail_archiver/fetch_data'
+require 'fetch_data'
 
 module GmailArchiver
   class ImapClient
@@ -60,9 +61,10 @@ module GmailArchiver
       uids.each_slice(per_slice) do |uid_set|
         @imap.uid_fetch(uid_set, ["FLAGS", 'ENVELOPE', "RFC822", "RFC822.SIZE", 'UID']).each do |x|
           f = FetchData.new x
-          puts f.envelope.subject
-          sleep 1
-        
+          File.open('mail.json', 'a') do |file|
+            log f.envelope.subject
+            file.write f.to_json + "\n"
+          end
         end
       end
     end
@@ -77,5 +79,4 @@ if __FILE__ == $0
     imap.select_mailbox "INBOX"
     imap.archive_messages
   end
-
 end
